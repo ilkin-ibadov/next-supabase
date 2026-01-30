@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
     const supabase = await createClient();
-    const id = params.id
+    const { id } = await context.params;
 
     if (!id) return new Response(JSON.stringify({ error: 'ID is required' }), { status: 400 });
 
@@ -15,10 +15,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     });
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
     const supabase = await createClient();
     const body = await req.json();
-    const id = params.id;
+    const { id } = await context.params;
     const { title, description, completed } = body;
 
     if (!id) return new Response(JSON.stringify({ error: 'ID is required' }), { status: 400 });
@@ -36,16 +36,29 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     });
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-    const supabase = await createClient()
+export async function DELETE(
+    req: Request,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params;
 
-    const id = Number(params.id);
+    const supabase = await createClient();
 
-    if (!id) return new Response(JSON.stringify({ error: 'ID is required' }), { status: 400 });
+    const todoId = Number(id);
 
-    const { error } = await supabase.from('todos').delete().eq('id', id);
+    if (!Number.isInteger(todoId)) {
+        return Response.json({ error: "Invalid ID" }, { status: 400 });
+    }
 
-    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    const { error } = await supabase
+        .from("todos")
+        .delete()
+        .eq("id", todoId);
 
-    return new Response(JSON.stringify({ message: 'Todo successfully deleted' }), { status: 204 });
+    if (error) {
+        console.error(error);
+        return Response.json({ error: error.message }, { status: 500 });
+    }
+
+    return new Response(null, { status: 204 });
 }

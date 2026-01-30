@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 
 const Todos = () => {
   const [todos, setTodos] = useState([])
+  const [change, setChange] = useState(false)
 
   const fetchTodos = async () => {
     try {
@@ -29,11 +30,9 @@ const Todos = () => {
         }
       })
 
-      if (res.ok) {
-        const data = await res.json()
-        console.log(data.message)
-        // alert(data.message)
-      }
+      alert(res.ok ? "Todo successfully deleted" : "Error while deleting todo")
+
+      setChange(prevValue => !prevValue)
     } catch (error) {
       console.error(error)
     }
@@ -41,17 +40,17 @@ const Todos = () => {
 
   useEffect(() => {
     fetchTodos()
-  }, [])
+  }, [change])
 
   return (
     <div className="w-full h-screen grid grid-cols-4 gap-5 p-5">
-      {todos.map(todo => <div className="border border-zinc-300 p-5 h-fit">
+      {todos.length ? todos.map(todo => <div key={todo.id} className="border border-zinc-300 p-5 h-fit">
         <h3>{todo.title}</h3>
         <p>{todo.description}</p>
         <button onClick={() => {
           deleteTodo(todo.id)
         }}>Delete</button>
-      </div>)}
+      </div>) : <p>No todos yet</p>}
     </div>
   )
 }
